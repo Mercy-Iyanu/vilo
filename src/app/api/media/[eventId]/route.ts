@@ -2,17 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Media from "@/lib/models/Media";
 
-interface Params {
-  params: { eventId: string };
+interface MediaRouteContext {
+  params: Promise<{
+    eventId: string;
+  }>;
 }
 
-export async function GET(
-  _req: NextRequest, 
-  { params }: { params: { eventId: string }}) {
+export async function GET(_req: NextRequest, context: MediaRouteContext) {
   try {
     await connectDB();
 
-    const { eventId } = params;
+    // Required for Next.js 16: params is now a Promise
+    const { eventId } = await context.params;
 
     if (!eventId) {
       return NextResponse.json(
