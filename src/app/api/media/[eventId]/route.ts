@@ -6,7 +6,9 @@ interface Params {
   params: { eventId: string };
 }
 
-export async function GET(_req: Request, { params }: Params) {
+export async function GET(
+  _req: Request, 
+  { params }: { params: { eventId: string }}) {
   try {
     await connectDB();
 
