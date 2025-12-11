@@ -6,15 +6,9 @@ import QRCode from "qrcode";
 export async function POST(req: Request) {
   try {
     await connectDB();
-    const {name} = await req.json();
-
-    if (!name) {
-      return NextResponse.json(
-        { error: "Event name is required" },
-        { status: 400 }
-      );
-    }
-    const newEvent = await Event.create({ name });
+    const count = await Event.countDocuments();
+    const autoName = `Event #${count + 1}`;
+    const newEvent = await Event.create({ name: autoName });
     const eventUrl = `${process.env.BASE_URL}/e/${newEvent._id}`;
     const qrCodeDataURL = await QRCode.toDataURL(eventUrl);
 
@@ -23,6 +17,7 @@ export async function POST(req: Request) {
       event: newEvent,
       eventUrl,
       qrCodeDataURL,
+      eventId: newEvent._id,
     });
   } catch (error) {
     console.error("Event Create Error:", error);

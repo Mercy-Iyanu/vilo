@@ -7,30 +7,32 @@ import {
   Input,
   Portal,
   Stack,
-  useDisclosure,
+  Text,
+  Box,
 } from "@chakra-ui/react";
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function OwnerDashboardPage() {
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const [eventUrl, setEventUrl] = useState("");
   const [qrCode, setQrCode] = useState("");
+  const [eventId, setEventId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleCreateEvent = async () => {
     setIsLoading(true);
     try {
       const res = await fetch("/api/events", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "New Event" }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create event");
 
       setEventUrl(data.eventUrl);
       setQrCode(data.qrCodeDataURL);
+      setEventId(data.eventId);
     } catch (err) {
       alert(err.message);
     } finally {
@@ -38,12 +40,14 @@ export default function OwnerDashboardPage() {
     }
   };
 
+  console.log("eventId:", eventId);
+
   const handleCopy = () => {
     navigator.clipboard.writeText(eventUrl);
     alert("Event link copied to clipboard!");
   };
 
-  const handleDownloadQR = () => {
+  const handleDownload = () => {
     const a = document.createElement("a");
     a.href = qrCode;
     a.download = "event-qr.png";
@@ -60,62 +64,79 @@ export default function OwnerDashboardPage() {
               Create Event
             </Button>
           </Dialog.Trigger>
-          <Portal isOpen={isOpen} onClose={onClose}>
+          <Portal>
             <Dialog.Backdrop />
+
             <Dialog.Positioner>
-              <Dialog.Content>
-                <Dialog.Header>
-                  <Dialog.Title>New Event Created 🎉</Dialog.Title>
-                </Dialog.Header>
+              <Dialog.Content borderRadius="lg" p="6" maxW="sm">
+                {!eventUrl ? (
+                  <>
+                    <Dialog.Header>
+                      <Dialog.Title fontSize="xl" fontWeight="bold">
+                        Create Event
+                      </Dialog.Title>
+                    </Dialog.Header>
 
-                <Dialog.Body pb="4">
-                  <Stack spacing="4" align="center">
-                    {isLoading && <p>Creating event...</p>}
-                    {eventUrl && (
-                      <>
-                        <Input value={eventUrl} isReadOnly textAlign="center" />
+                    <Dialog.Body>
+                      <Text mb="4" color="gray.600" textAlign="center">
+                        Generate your event link + QR
+                      </Text>
+                    </Dialog.Body>
+
+                    <Dialog.Footer justifyContent="center">
+                      <Button
+                        colorPalette="teal"
+                        isLoading={isLoading}
+                        onClick={handleCreateEvent}
+                      >
+                        Create Event
+                      </Button>
+                    </Dialog.Footer>
+                  </>
+                ) : (
+                  <>
+                    <Dialog.Header textAlign="center">
+                      <Dialog.Title fontSize="xl" fontWeight="bold">
+                        Event Ready 🎉
+                      </Dialog.Title>
+                      <Text fontSize="sm" color="gray.600">
+                        Share the link or QR code with your guests
+                      </Text>
+                    </Dialog.Header>
+
+                    <Dialog.Body>
+                      <Stack spacing="4" align="center">
+                        <Box bg="white" p="4" borderRadius="lg" boxShadow="md">
+                          <Image
+                            src={qrCode}
+                            alt="QR Code"
+                            width={220}
+                            height={220}
+                          />
+                        </Box>
+
+                        <Input value={eventUrl} readOnly />
+
                         <HStack spacing="4">
-                          <Button colorScheme="blue" onClick={handleCopy}>
-                            Copy Link
-                          </Button>
-                          <Button
-                            colorScheme="green"
-                            onClick={handleDownloadQR}
-                          >
-                            Download QR
-                          </Button>
+                          <Button onClick={handleCopy}>Copy Link</Button>
+                          <Button onClick={handleDownload}>Download</Button>
                         </HStack>
-                        <Image
-                          src={qrCode}
-                          alt="QR Code"
-                          width={150}
-                          height={150}
-                        />
-                      </>
-                    )}
-                  </Stack>
-                </Dialog.Body>
+                      </Stack>
+                    </Dialog.Body>
 
-                <Dialog.Footer>
-                  <Button variant="ghost" onClick={onClose}>
-                    Close
-                  </Button>
-                  {!eventUrl && (
-                    <Button
-                      colorScheme="teal"
-                      isLoading={isLoading}
-                      onClick={handleCreateEvent}
-                    >
-                      Create
-                    </Button>
-                  )}
-                </Dialog.Footer>
+                    <Dialog.Footer justifyContent="center"></Dialog.Footer>
+                  </>
+                )}
               </Dialog.Content>
             </Dialog.Positioner>
           </Portal>
         </Dialog.Root>
 
-        <Button colorScheme="teal" variant="outline">
+        <Button
+          colorPalette="teal"
+          variant="outline"
+          onClick={() => router.push(`/owner/events/${eventId}/media`)}
+        >
           View Media
         </Button>
       </HStack>
