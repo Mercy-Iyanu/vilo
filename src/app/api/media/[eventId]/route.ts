@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Media from "@/lib/models/Media";
 
@@ -7,7 +7,7 @@ interface Params {
 }
 
 export async function GET(
-  _req: Request, 
+  _req: NextRequest, 
   { params }: { params: { eventId: string }}) {
   try {
     await connectDB();
